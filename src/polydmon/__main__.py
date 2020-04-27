@@ -31,8 +31,12 @@ class Event(object):
 
 
 class Bounty(Event):
-    STR_VALUES = Event.STR_VALUES + ['author', 'sha256', 'artifact_type', 'amount', 'extended_type', 'bounty_guid']
+    STR_VALUES = Event.STR_VALUES + ['author', 'sha256', 'artifact_type', 'amount', 'filename', 'extended_type', 'guid']
 
+    def __init__(self, event):
+        super().__init__(event)
+        # assumes single-artifact bounty
+        self.__dict__.update(self.metadata[0])
 
 class Assertion(Event):
     STR_VALUES = Event.STR_VALUES + ['author', 'bid', 'extended_type', 'bounty_guid']
@@ -80,9 +84,9 @@ polyd_uris = [
 
 
 @click.command()
-@click.option('--event', multiple=True, type=click.Choice(event_types+['all']), default=['all'])
-@click.option('--uri', multiple=True, type=click.Choice(polyd_uris+['all']), default=['all'])
-@click.option('--json', is_flag=True, default=False)
+@click.option('-e', '--event', multiple=True, type=click.Choice(event_types+['all']), default=['all'])
+@click.option('--uri', '-u', multiple=True, type=click.Choice(polyd_uris+['all']), default=['all'])
+@click.option('--json', '-j', is_flag=True, default=False)
 def polydmon(event, uri, json):
     uris = uri if 'all' not in uri else polyd_uris
 
@@ -100,6 +104,7 @@ def polydmon(event, uri, json):
 
     signal.signal(signal.SIGINT, handler)
 
+    # this will quit if either thread exits
     for event in iter(q.get, None):
         if event.event in events or 'all' in events:
             if json:
