@@ -35,10 +35,10 @@ class WSThread(threading.Thread):
                         except asyncio.TimeoutError:
                             continue
                         except Exception as e:
-                            print(e)
+                            logger.exception(e)
                             break
             except Exception as e:
-                print(e)
+                logger.exception(e)
 
             if not self.retry or self.stop:
                 break
@@ -73,7 +73,8 @@ def print_json(e):
 @click.option('-e', '--event', multiple=True, type=click.Choice(event_types+['all']), default=['all'])
 @click.option('--uri', '-u', multiple=True, type=click.Choice(polyd_uris+['all']), default=['all'])
 @click.option('--json', '-j', is_flag=True, default=False)
-@click.option('--sql', '-s', type=click.STRING, default='', help='connection string for sql backend')
+@click.option('--sql', '-s', type=click.STRING, envvar='POLYDMON_SQL', default='',
+              help='connection string for sql backend')
 @click.option('--retry', '-r', is_flag=True, default=False)
 def polydmon(event, uri, json, sql, retry):
     uris = uri if 'all' not in uri else polyd_uris

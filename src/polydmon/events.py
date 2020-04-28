@@ -6,11 +6,12 @@ class Event(object):
     STR_VALUES = ['event', 'block_number']
 
     def __init__(self, event):
+        json = dumps(event)
         self.__dict__ = event['data']
         self.event = event['event']
-        self.block_number = event.get('block_number', '')
+        self.block_number = event.get('block_number', -1)
         self.txhash = event.get('txhash', '')
-        self.json = dumps(event)
+        self.json = json
 
     @classmethod
     def from_event(cls, event):
@@ -31,7 +32,7 @@ class Bounty(Event):
 
 
 class Assertion(Event):
-    STR_VALUES = Event.STR_VALUES + ['author', 'bid', 'extended_type', 'bounty_guid']
+    STR_VALUES = Event.STR_VALUES + ['author', 'bid', 'bounty_guid']
 
 
 class Vote(Event):
