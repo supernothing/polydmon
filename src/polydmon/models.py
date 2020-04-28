@@ -96,6 +96,7 @@ class Bounty(Base):
     assertions = relationship('Assertion', cascade='all, delete-orphan')
     votes = relationship('Vote', cascade='all, delete-orphan')
     address = Column(String, index=True)
+    amount = Column(BigInteger)
 
     @classmethod
     def from_event(cls, e, session):
@@ -107,7 +108,8 @@ class Bounty(Base):
                    assertions=assertions, votes=votes, address=e.author,
                    guid=e.guid, md5=e.md5, sha1=e.sha1, sha256=e.sha256,
                    mimetype=e.mimetype, extended_type=e.extended_type,
-                   uri=e.uri, expiration=datetime.datetime.fromtimestamp(int(e.expiration)))
+                   uri=e.uri, expiration=datetime.datetime.fromtimestamp(int(e.expiration)),
+                   amount=e.amount)
 
 model_names = {cls.__tablename__: cls for cls in [Bounty, Vote, Assertion, Event]}
 
