@@ -24,7 +24,7 @@ class Event(Base):
     block_number = Column(Integer, index=True, nullable=True)
     txhash = Column(String, index=True, nullable=True)
     data = Column(JSONB, nullable=True)
-    time = Column(DateTime(), server_default=func.now())
+    time = Column(DateTime(), server_default=func.now(), index=True)
 
     @classmethod
     def from_event(cls, e, session):
@@ -38,7 +38,7 @@ class Assertion(Base):
     event = Column(String, index=True)
     block_number = Column(Integer, index=True, nullable=True)
     txhash = Column(String, index=True, nullable=True)
-    time = Column(DateTime(), server_default=func.now())
+    time = Column(DateTime(), server_default=func.now(), index=True)
 
     bounty_id = Column(Integer, ForeignKey('bounty.id'), index=True, nullable=True)
     address = Column(String, index=True)
@@ -62,7 +62,7 @@ class Vote(Base):
     event = Column(String, index=True)
     block_number = Column(Integer, index=True, nullable=True)
     txhash = Column(String, index=True, nullable=True)
-    time = Column(DateTime(), server_default=func.now())
+    time = Column(DateTime(), server_default=func.now(), index=True)
 
     bounty_id = Column(Integer, ForeignKey('bounty.id'), index=True, nullable=True)
     bounty = relationship('Bounty', back_populates='votes')
@@ -83,7 +83,7 @@ class Bounty(Base):
     event = Column(String, index=True)
     block_number = Column(Integer, index=True, nullable=True)
     txhash = Column(String, index=True, nullable=True)
-    time = Column(DateTime(), server_default=func.now())
+    time = Column(DateTime(), server_default=func.now(), index=True)
 
     guid = Column(String, index=True)
     md5 = Column(String, index=True)
