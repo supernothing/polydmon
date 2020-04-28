@@ -34,6 +34,24 @@ class Bounty(Event):
 class Assertion(Event):
     STR_VALUES = Event.STR_VALUES + ['author', 'bid', 'bounty_guid']
 
+    def __init__(self, event):
+        super().__init__(event)
+        try:
+            if type(self.bid) == list:
+                self.bid = int(self.bid[0])
+        except AttributeError:
+            print('attr error')
+            pass
+
 
 class Vote(Event):
     STR_VALUES = Event.STR_VALUES + ['voter', 'votes', 'bounty_guid']
+
+    def __init__(self, event):
+        super().__init__(event)
+        try:
+            if type(self.votes) == list:
+                self.votes = int(self.votes[0])
+        except AttributeError:
+            print('attr error')
+            pass
