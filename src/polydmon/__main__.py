@@ -9,64 +9,42 @@ import threading
 import queue
 import signal
 from json import dumps
+import logging
 
+from . import events
 
-class Event(object):
-    STR_VALUES = ['event', 'block_number']
-
-    def __init__(self, event):
-        self.__dict__ = event['data']
-        self.event = event['event']
-        self.block_number = event.get('block_number', '')
-        self.txhash = event.get('txhash', '')
-        self.json = dumps(event)
-
-    @classmethod
-    def from_event(cls, event):
-        cls = getattr(sys.modules[__name__], inflection.camelize(event['event']), Event)
-        return cls(event)
-
-    def __str__(self):
-        return ', '.join(f'{k}: {self.__dict__.get(k, "")}' for k in self.STR_VALUES)
-
-
-class Bounty(Event):
-    STR_VALUES = Event.STR_VALUES + ['author', 'sha256', 'artifact_type', 'amount', 'filename', 'extended_type', 'guid']
-
-    def __init__(self, event):
-        super().__init__(event)
-        # assumes single-artifact bounty
-        self.__dict__.update(self.metadata[0])
-
-class Assertion(Event):
-    STR_VALUES = Event.STR_VALUES + ['author', 'bid', 'extended_type', 'bounty_guid']
-
-
-class Vote(Event):
-    STR_VALUES = Event.STR_VALUES + ['voter', 'votes', 'bounty_guid']
+logger = logging.getLogger('polydmon')
 
 
 class WSThread(threading.Thread):
-    def __init__(self, uri, queue):
+    def __init__(self, uri, queue, retry=False):
         super().__init__()
         self.uri = uri
         self.q = queue
         self.stop = False
+        self.retry = retry
 
     async def _main_loop(self):
-        try:
-            async with websockets.connect(self.uri) as websocket:
-                while not (websocket.closed or self.stop):
-                    try:
-                        self.q.put(Event.from_event(json.loads(await
-                               asyncio.wait_for(websocket.recv(), 1))))
-                    except asyncio.TimeoutError:
-                        continue
-                    except Exception as e:
-                        print(e)
-                        break
-        except Exception as e:
-            print(e)
+        while True:
+            try:
+                async with websockets.connect(self.uri) as websocket:
+                    while not (websocket.closed or self.stop):
+                        try:
+                            self.q.put(events.Event.from_event(json.loads(await
+                                   asyncio.wait_for(websocket.recv(), 1))))
+                        except asyncio.TimeoutError:
+                            continue
+                        except Exception as e:
+                            print(e)
+                            break
+            except Exception as e:
+                print(e)
+
+            if not self.retry or self.stop:
+                break
+
+            logger.warning('Socket disconnected, retrying in 1s...')
+            await asyncio.sleep(1)
 
         self.q.put(None)
 
@@ -75,7 +53,7 @@ class WSThread(threading.Thread):
         asyncio.get_event_loop().run_until_complete(self._main_loop())
 
 
-event_types = [inflection.underscore(cls.__name__) for cls in Event.__subclasses__()]
+event_types = [inflection.underscore(cls.__name__) for cls in events.Event.__subclasses__()]
 
 polyd_uris = [
     'wss://nu.k.polyswarm.network/v1/events/?chain=side',
@@ -83,34 +61,51 @@ polyd_uris = [
 ]
 
 
+def print_event(e):
+    print(str(e))
+
+
+def print_json(e):
+    print(e.json)
+
+
 @click.command()
 @click.option('-e', '--event', multiple=True, type=click.Choice(event_types+['all']), default=['all'])
 @click.option('--uri', '-u', multiple=True, type=click.Choice(polyd_uris+['all']), default=['all'])
 @click.option('--json', '-j', is_flag=True, default=False)
-def polydmon(event, uri, json):
+@click.option('--sql', '-s', type=click.STRING, default='', help='connection string for sql backend')
+@click.option('--retry', '-r', is_flag=True, default=False)
+def polydmon(event, uri, json, sql, retry):
     uris = uri if 'all' not in uri else polyd_uris
 
     q = queue.Queue(maxsize=100)
-    threads = [WSThread(u, q) for u in uris]
+    threads = [WSThread(u, q, retry) for u in uris]
 
     for t in threads:
         t.start()
 
     events = event
+    ctrlc = False
 
     def handler(_, __):
+        ctrlc = True
         for t in threads:
             t.stop = True
 
     signal.signal(signal.SIGINT, handler)
 
+    event_handlers = [print_json if json else print_event]
+
+    if sql:
+        from .models import EventHandler
+        sql_handler = EventHandler(sql)
+        event_handlers.append(sql_handler.handle_event)
+
     # this will quit if either thread exits
     for event in iter(q.get, None):
         if event.event in events or 'all' in events:
-            if json:
-                print(event.json)
-            else:
-                print(str(event))
+            for handler in event_handlers:
+                handler(event)
 
     for t in threads:
         t.join()

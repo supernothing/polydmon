@@ -25,6 +25,9 @@ setup(
     license='MIT',
     python_requires='>=3.6,<4',
     install_requires=parse_requirements(),
+    extras_require={
+        'sql': ['SQLAlchemy~=1.3.16', 'alembic~=1.4.2']
+    },
     include_package_data=True,
     packages=find_packages('src'),
     package_dir={'': 'src/'},
