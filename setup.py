@@ -26,7 +26,7 @@ setup(
     python_requires='>=3.6,<4',
     install_requires=parse_requirements(),
     extras_require={
-        'sql': ['SQLAlchemy~=1.3.16', 'alembic~=1.4.2', 'psycopg2-binary~=2.8.5']
+        'sql': ['SQLAlchemy~=1.3.16', 'alembic~=1.4.2', 'psycopg2-binary~=2.8.5'],
         'sql_pypy': ['SQLAlchemy~=1.3.16', 'alembic~=1.4.2', 'psycopg2cffi~=2.8.1']
     },
     include_package_data=True,

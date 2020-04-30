@@ -1,5 +1,12 @@
 import datetime
 
+try:
+    import psycopg2
+except ImportError:
+    # Fall back to psycopg2cffi
+    from psycopg2cffi import compat
+    compat.register()
+
 from sqlalchemy import Column, Integer, String, BigInteger, DateTime, ForeignKey, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
