@@ -10,7 +10,7 @@ RUN groupadd -r worker \
     && chown -R worker:worker /usr/src/app \
     && pip install --no-cache-dir -U pip
 
-RUN pip install .[sql_pypy]
+RUN pip install .[sql]
 
 USER worker
 
