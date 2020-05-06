@@ -1,3 +1,6 @@
 websockets~=8.1
 inflection~=0.3.1
 click~=7.1.2
+git+git://github.com/supernothing/libpolyd@master#egg=libpolyd
+git+git://github.com/supernothing/polyd-events@master#egg=polyd_events
+walrus~=0.8.1
