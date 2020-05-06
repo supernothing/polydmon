@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 import click
 import inflection
-import queue
-import signal
 import logging
+import socket
 
 from walrus import Database
 
@@ -30,9 +29,10 @@ def print_event(e):
               help='connection string for sql backend')
 @click.option('--redis', '-h', type=click.STRING, envvar='POLYDMON_REDIS', default='127.0.0.1',
               help='redis hostname')
-@click.option('--retry', '-r', is_flag=True, default=False)
+@click.option('--consumer-name', type=click.STRING, envvar='POLYDMON_CONSUMER_NAME', default=socket.gethostname(),
+              help='consumer name')
 @click.option('--quiet', '-q', is_flag=True, default=False)
-def polydmon(event, community, sql, redis, retry, quiet):
+def polydmon(event, community, sql, redis, consumer_name, quiet):
     db = Database(redis)
     communities = community if 'all' not in community else polyd_communities
 
@@ -44,7 +44,7 @@ def polydmon(event, community, sql, redis, retry, quiet):
             for e in events:
                 streams.append(f'polyd-{c}-{e}')
 
-    c = consumer.EventConsumer(streams, __name__, db)
+    c = consumer.EventConsumer(streams, __name__, consumer_name, db)
 
     if not quiet:
         event_handlers = [print_event]
