@@ -16,4 +16,3 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         dockerfile: docker/Dockerfile
         snapshot: true
-        tags: true
