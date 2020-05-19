@@ -1,25 +1,18 @@
 #!/usr/bin/env python
 import click
-import inflection
 import logging
 import socket
 
 from walrus import Database
 
-from polyd_events import events, consumer
+from polyd_events import events, consumer, event_types
+from polyd_events import communities as polyd_communities
 
 logger = logging.getLogger('polydmon')
 
-event_types = [inflection.underscore(cls.__name__) for cls in events.Event.__subclasses__()]
-
-polyd_communities = [
-    'nu',
-    'lima'
-]
-
 
 def print_event(e):
-    print(str(e))
+    print(str(e.json))
 
 
 @click.command()
